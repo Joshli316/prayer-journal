@@ -46,6 +46,58 @@
       --gold-text: #866413;      /* darker gold for WCAG AA text contrast */
     }
 
+    /* ── Dark mode palette ── */
+    [data-theme="dark"] {
+      --cream: #1a1a2e;
+      --white: #1e2640;
+      --navy: #f0e8dc;
+      --blue: #a3cde8;
+      --rust: #f0a878;
+      --gold: #e8bf60;
+      --light-blue: #253450;
+      --border: #3a4a68;
+      --text: #e8e0d6;
+      --shadow: rgba(0,0,0,0.4);
+      --gold-text: #e8bf60;
+    }
+
+    /* Dark mode: brighten inputs, placeholders, and specific elements */
+    [data-theme="dark"] textarea,
+    [data-theme="dark"] input[type="text"],
+    [data-theme="dark"] input[type="date"],
+    [data-theme="dark"] select {
+      background: #253450;
+      border-color: #3a4a68;
+      color: #e8e0d6;
+    }
+    [data-theme="dark"] textarea::placeholder,
+    [data-theme="dark"] input::placeholder {
+      color: #8899b0;
+    }
+    [data-theme="dark"] .scripture-verse {
+      color: #f0e8dc;
+    }
+    [data-theme="dark"] .btn-add {
+      background: #a3cde8;
+      color: #1a1a2e;
+    }
+    [data-theme="dark"] .btn-add:hover {
+      background: #c0ddf0;
+    }
+    [data-theme="dark"] .welcome-banner h2 {
+      color: #f0e8dc;
+    }
+    [data-theme="dark"] .welcome-banner p {
+      color: #d0c8bc;
+    }
+    [data-theme="dark"] .footer-quote {
+      opacity: 0.85;
+    }
+    [data-theme="dark"] ::selection {
+      background: #3a5a80;
+      color: #f0e8dc;
+    }
+
     /* ── Reset & Base ── */
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -381,6 +433,42 @@
       color: var(--rust);
     }
 
+    /* ── Dark mode toggle ── */
+    .dark-toggle {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+      box-shadow: 0 1px 4px var(--shadow);
+      z-index: 10;
+      line-height: 1;
+    }
+    .dark-toggle:hover {
+      background: var(--navy);
+      color: var(--white);
+    }
+
+    /* ── Dark mode overrides for elements with hardcoded colors ── */
+    [data-theme="dark"] .tag-family   { background: #3d2a1e; color: #f0a878; }
+    [data-theme="dark"] .tag-work     { background: #1e3828; color: #70d898; }
+    [data-theme="dark"] .tag-church   { background: #302548; color: #c0a0f0; }
+    [data-theme="dark"] .tag-friends  { background: #1e3248; color: #a3cde8; }
+    [data-theme="dark"] .tag-self     { background: #383018; color: #e8bf60; }
+    [data-theme="dark"] .tag-nation   { background: #401e1e; color: #f09090; }
+    [data-theme="dark"] .tag-other    { background: #303040; color: #b0b0c0; }
+    [data-theme="dark"] .answered-item.is-answered { background: #302a18; }
+    [data-theme="dark"] .answered-tracker { background: #302a18; }
+    [data-theme="dark"] .welcome-banner { background: linear-gradient(135deg, #253450 0%, #302a18 100%); }
+    [data-theme="dark"] .history-entry-date { background: #253450; }
+    [data-theme="dark"] .history-entry-date:hover { background: #2e4060; }
+    [data-theme="dark"] .history-empty { color: #8899b0; }
+
     /* ── Language toggle ── */
     .lang-toggle {
       position: absolute;
@@ -628,7 +716,7 @@
     /* ── Print: clean output ── */
     @media print {
       body { padding: 0; background: white; }
-      .lang-toggle, .btn-add, .btn-delete, .btn-data,
+      .lang-toggle, .dark-toggle, .btn-add, .btn-delete, .btn-data,
       .prayer-input-row, .answered-input-row, .history-controls,
       .data-controls { display: none !important; }
       .section-card { box-shadow: none; border: 1px solid #ddd; break-inside: avoid; }
@@ -644,12 +732,14 @@
       .answered-input-row { flex-direction: column; }
       .btn-add { width: 100%; }
       .lang-toggle { top: 10px; right: 10px; padding: 5px 10px; font-size: 0.72rem; }
+      .dark-toggle { top: 10px; left: 10px; padding: 5px 10px; font-size: 0.85rem; }
       .history-controls { flex-direction: column; }
       .history-controls > * { width: 100%; }
     }
     @media (max-width: 360px) {
       .journal-header h1 { font-size: 2.8rem; }
       .lang-toggle { padding: 4px 8px; font-size: 0.68rem; }
+      .dark-toggle { padding: 4px 8px; font-size: 0.78rem; }
     }
   </style>
 </head>
@@ -663,6 +753,9 @@
 </noscript>
 
 <div class="journal-container">
+
+  <!-- ══ DARK MODE TOGGLE ══ -->
+  <button class="dark-toggle" id="darkToggle" onclick="toggleDarkMode()" aria-label="Toggle dark mode">🌙</button>
 
   <!-- ══ LANGUAGE TOGGLE ══ -->
   <button class="lang-toggle" id="langToggle" onclick="toggleLanguage()" aria-label="Switch language">中文</button>
@@ -894,6 +987,33 @@
   };
 
   let currentLang = localStorage.getItem('prayerJournalLang') || 'en';
+
+  // ════════════════════════════════════════
+  //  DARK MODE
+  // ════════════════════════════════════════
+  function applyDarkMode(isDark) {
+    document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+    document.getElementById('darkToggle').textContent = isDark ? '☀️' : '🌙';
+    // Update theme-color meta for mobile browser chrome
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.content = isDark ? '#1a1a2e' : '#f5f0e8';
+  }
+
+  function toggleDarkMode() {
+    const isDark = document.documentElement.getAttribute('data-theme') !== 'dark';
+    applyDarkMode(isDark);
+    localStorage.setItem('prayerJournalDark', isDark ? 'true' : 'false');
+  }
+
+  // Init dark mode from saved preference or system preference
+  (function() {
+    const saved = localStorage.getItem('prayerJournalDark');
+    if (saved !== null) {
+      applyDarkMode(saved === 'true');
+    } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      applyDarkMode(true);
+    }
+  })();
   let activeDateKey = getTodayKey();
 
   // ════════════════════════════════════════
